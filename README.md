@@ -65,11 +65,9 @@ from nisqa import NISQAPredictor
 
 predictor = NISQAPredictor(
     pretrained_model="weights/nisqa.tar",
-    batch_size=10,
-    num_workers=0,
 )
 
-results = predictor.predict_file("/path/to/wav/file.wav")
+result = predictor.predict_dim("/path/to/wav/file.wav")
 ```
 
 The repository scripts `python run_predict.py ...`, `python run_train.py ...`, and `python run_evaluate.py ...` still work when you are using a repo checkout.
@@ -84,10 +82,7 @@ There are three different model weights available, the appropriate weights shoul
 
 ### Prediction
 
-There are three prediction modes available through `NISQAPredictor`:
-* Predict a single file
-* Predict all files in a folder
-* Predict all files in a CSV table
+`NISQAPredictor` is intended for repeated single-audio inference from Python code. Initialize it once with a pretrained model and call either `predict_mos(audio)` or `predict_dim(audio)`, depending on the loaded checkpoint.
 
 **Important:** Select "*nisqa.tar*" to predict the quality of a transmitted speech sample and "*nisqa_tts.tar*" to predict the Naturalness of a synthesized speech sample.
 
@@ -98,36 +93,11 @@ from nisqa import NISQAPredictor
 
 predictor = NISQAPredictor(
     pretrained_model="weights/nisqa.tar",
-    output_dir="/path/to/dir/with/results",
 )
-results = predictor.predict_file("/path/to/wav/file.wav")
+result = predictor.predict_dim("/path/to/wav/file.wav")
 ```
 
-To predict the quality of all `.wav` files in a folder use:
-
-```python
-predictor = NISQAPredictor(
-    pretrained_model="weights/nisqa.tar",
-    batch_size=10,
-    num_workers=0,
-    output_dir="/path/to/dir/with/results",
-)
-results = predictor.predict_dir("/path/to/folder/with/wavs")
-```
-
-To predict the quality of all `.wav` files listed in a CSV table use:
-
-```python
-predictor = NISQAPredictor(
-    pretrained_model="weights/nisqa.tar",
-    batch_size=10,
-    num_workers=0,
-    output_dir="/path/to/dir/with/results",
-)
-results = predictor.predict_csv("files.csv", "column_name_of_filepaths")
-```
-
-The prediction methods return the results as a pandas `DataFrame` and will also save `NISQA_results.csv` if `output_dir` is set. To speed up the prediction, the number of workers and batch size of the PyTorch dataloader can be increased with `num_workers` and `batch_size`. In case of stereo files `ms_channel` can be used to select the audio channel.
+For MOS-only checkpoints such as `nisqa_mos_only.tar`, call `predict_mos(audio)`. For dimensional checkpoints such as `nisqa.tar`, call `predict_dim(audio)`. Both methods accept either a filesystem path or byte-encoded audio and return only the predicted score fields for that one input. In case of stereo files `ms_channel` can be used to select the audio channel.
 
 When installed with `pip`, relative model paths such as `weights/nisqa.tar` and bare filenames such as `nisqa.tar` fall back to the packaged model weights if they are not present in the current working directory.
 

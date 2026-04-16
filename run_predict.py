@@ -1,6 +1,7 @@
 import argparse
 
-from nisqa.inference import NISQAPredictor
+from nisqa.NISQA_model import nisqaModel
+from nisqa._resources import resolve_path
 
 
 if __name__ == "__main__":
@@ -20,50 +21,27 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, default=0, help="number of workers for PyTorch dataloader")
     parser.add_argument("--bs", type=int, default=1, help="batch size for predicting")
     parser.add_argument("--ms_channel", type=int, help="audio channel in case of stereo file")
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
-    predictor = NISQAPredictor(
-        pretrained_model=args.pretrained_model,
-        num_workers=args.num_workers,
-        batch_size=args.bs,
-        ms_channel=args.ms_channel,
-        output_dir=args.output_dir,
-    )
-
-    if args.mode == "predict_file":
-        predictor.predict_file(args.deg)
-    elif args.mode == "predict_dir":
-        predictor.predict_dir(args.data_dir)
-    elif args.mode == "predict_csv":
-        predictor.predict_csv(args.csv_file, args.csv_deg, data_dir=args.data_dir or "")
+    if args["mode"] == "predict_file":
+        if args["deg"] is None:
+            raise ValueError("--deg argument with path to input file needed")
+    elif args["mode"] == "predict_dir":
+        if args["data_dir"] is None:
+            raise ValueError("--data_dir argument with folder with input files needed")
+    elif args["mode"] == "predict_csv":
+        if args["csv_file"] is None:
+            raise ValueError("--csv_file argument with csv file name needed")
+        if args["csv_deg"] is None:
+            raise ValueError("--csv_deg argument with csv column name of the filenames needed")
+        if args["data_dir"] is None:
+            args["data_dir"] = ""
     else:
         raise NotImplementedError("--mode given not available")
 
+    args["pretrained_model"] = resolve_path(args["pretrained_model"], "weights")
+    args["tr_bs_val"] = args.pop("bs")
+    args["tr_num_workers"] = args.pop("num_workers")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    nisqa = nisqaModel(args)
+    nisqa.predict()
