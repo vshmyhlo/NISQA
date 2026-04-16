@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, TypeVar, TypedDict
+from typing import Any, TypedDict
 
 import torch
 import torch.nn as nn
@@ -11,7 +11,6 @@ from nisqa._resources import resolve_path
 
 ArgsDict = dict[str, Any]
 PredictionInput = str | Path | bytes
-PredictorT = TypeVar("PredictorT", bound="NISQAPredictor")
 
 
 class MosPrediction(TypedDict):
@@ -48,12 +47,12 @@ class NISQAPredictor:
 
     @classmethod
     def _from_packaged_checkpoint(
-        cls: type[PredictorT],
+        cls: type[NISQAPredictor],
         checkpoint_name: str,
         *,
         device: str | torch.device | None = None,
         ms_channel: int | None = None,
-    ) -> PredictorT:
+    ) -> NISQAPredictor:
         """Create a predictor from one of the packaged checkpoint files."""
         return cls(
             pretrained_model=checkpoint_name,
@@ -63,11 +62,11 @@ class NISQAPredictor:
 
     @classmethod
     def from_nisqa(
-        cls: type[PredictorT],
+        cls: type[NISQAPredictor],
         *,
         device: str | torch.device | None = None,
         ms_channel: int | None = None,
-    ) -> PredictorT:
+    ) -> NISQAPredictor:
         """Load the multidimensional NISQA v2.0 checkpoint."""
         return cls._from_packaged_checkpoint(
             "nisqa.tar",
@@ -77,11 +76,11 @@ class NISQAPredictor:
 
     @classmethod
     def from_nisqa_mos_only(
-        cls: type[PredictorT],
+        cls: type[NISQAPredictor],
         *,
         device: str | torch.device | None = None,
         ms_channel: int | None = None,
-    ) -> PredictorT:
+    ) -> NISQAPredictor:
         """Load the MOS-only NISQA v2.0 checkpoint."""
         return cls._from_packaged_checkpoint(
             "nisqa_mos_only.tar",
@@ -91,11 +90,11 @@ class NISQAPredictor:
 
     @classmethod
     def from_nisqa_tts(
-        cls: type[PredictorT],
+        cls: type[NISQAPredictor],
         *,
         device: str | torch.device | None = None,
         ms_channel: int | None = None,
-    ) -> PredictorT:
+    ) -> NISQAPredictor:
         """Load the packaged NISQA-TTS checkpoint."""
         return cls._from_packaged_checkpoint(
             "nisqa_tts.tar",
