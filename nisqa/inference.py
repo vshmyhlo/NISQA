@@ -208,7 +208,7 @@ class NISQAPredictor:
             "ms_n_mels": self.args["ms_n_mels"],
             "ms_sr": self.args["ms_sr"],
             "ms_fmax": self.args["ms_fmax"],
-            "ms_channel": self.args["ms_channel"],
+            "ms_channel": self.args.get("ms_channel"),
         }
 
     def _require_mos_model(self) -> None:
