@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, TypeVar, TypedDict
 
 import torch
 import torch.nn as nn
@@ -11,6 +11,7 @@ from nisqa._resources import resolve_path
 
 ArgsDict = dict[str, Any]
 PredictionInput = str | Path | bytes
+PredictorT = TypeVar("PredictorT", bound="NISQAPredictor")
 
 
 class MosPrediction(TypedDict):
@@ -44,6 +45,63 @@ class NISQAPredictor:
         self.dev = self._get_device(device)
         self.ms_channel = ms_channel
         self.args, self.model = self._load_model()
+
+    @classmethod
+    def _from_packaged_checkpoint(
+        cls: type[PredictorT],
+        checkpoint_name: str,
+        *,
+        device: str | torch.device | None = None,
+        ms_channel: int | None = None,
+    ) -> PredictorT:
+        """Create a predictor from one of the packaged checkpoint files."""
+        return cls(
+            pretrained_model=checkpoint_name,
+            device=device,
+            ms_channel=ms_channel,
+        )
+
+    @classmethod
+    def from_nisqa(
+        cls: type[PredictorT],
+        *,
+        device: str | torch.device | None = None,
+        ms_channel: int | None = None,
+    ) -> PredictorT:
+        """Load the multidimensional NISQA v2.0 checkpoint."""
+        return cls._from_packaged_checkpoint(
+            "nisqa.tar",
+            device=device,
+            ms_channel=ms_channel,
+        )
+
+    @classmethod
+    def from_nisqa_mos_only(
+        cls: type[PredictorT],
+        *,
+        device: str | torch.device | None = None,
+        ms_channel: int | None = None,
+    ) -> PredictorT:
+        """Load the MOS-only NISQA v2.0 checkpoint."""
+        return cls._from_packaged_checkpoint(
+            "nisqa_mos_only.tar",
+            device=device,
+            ms_channel=ms_channel,
+        )
+
+    @classmethod
+    def from_nisqa_tts(
+        cls: type[PredictorT],
+        *,
+        device: str | torch.device | None = None,
+        ms_channel: int | None = None,
+    ) -> PredictorT:
+        """Load the packaged NISQA-TTS checkpoint."""
+        return cls._from_packaged_checkpoint(
+            "nisqa_tts.tar",
+            device=device,
+            ms_channel=ms_channel,
+        )
 
     def _get_device(self, device: str | torch.device | None) -> torch.device:
         """Resolve the target device for inference."""

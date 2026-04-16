@@ -70,6 +70,15 @@ predictor = NISQAPredictor(
 result = predictor.predict_dim("/path/to/wav/file.wav")
 ```
 
+Or use the packaged checkpoints directly:
+
+```python
+from nisqa import NISQAPredictor
+
+predictor = NISQAPredictor.from_nisqa()
+result = predictor.predict_dim("/path/to/wav/file.wav")
+```
+
 The repository scripts `python run_predict.py ...`, `python run_train.py ...`, and `python run_evaluate.py ...` still work when you are using a repo checkout.
 
 There are three different model weights available, the appropriate weights should be loaded depending on the domain:
@@ -79,6 +88,24 @@ There are three different model weights available, the appropriate weights shoul
 | NISQA (v2.0)          | Overall Quality, Noisiness, Coloration, Discontinuity, Loudness | Transmitted Speech | nisqa.tar          |
 | NISQA (v2.0) mos only | Overall Quality only (for finetuning/transfer learning)         | Transmitted Speech | nisqa_mos_only.tar |
 | NISQA-TTS (v1.0)      | Naturalness                                                     | Synthesized Speech | nisqa_tts.tar      |
+
+### Which model should I use?
+
+- `nisqa.tar`: use this for transmitted speech when you want the full multidimensional output. This checkpoint is the only packaged model that returns `mos_pred`, `noi_pred`, `dis_pred`, `col_pred`, and `loud_pred`.
+- `nisqa_mos_only.tar`: use this for transmitted speech when you only need one overall score, or when you want the MOS-only checkpoint mentioned in the finetuning / transfer-learning workflow.
+- `nisqa_tts.tar`: use this for synthesized speech, including TTS or voice conversion style outputs, when you want a single Naturalness prediction.
+
+What is confirmed from the packaged checkpoints:
+
+- `nisqa.tar` loads a `NISQA_DIM` model.
+- `nisqa_mos_only.tar` loads a `NISQA` model.
+- `nisqa_tts.tar` loads a `NISQA` model.
+
+What this repository does not clearly specify:
+
+- whether `nisqa.tar` or `nisqa_mos_only.tar` is better if you only care about one overall transmitted-speech score
+- the exact training data differences between `nisqa.tar` and `nisqa_mos_only.tar`
+- any quantitative tradeoff in accuracy, speed, or robustness between those two transmitted-speech checkpoints
 
 ### Prediction
 
@@ -97,7 +124,7 @@ predictor = NISQAPredictor(
 result = predictor.predict_dim("/path/to/wav/file.wav")
 ```
 
-For MOS-only checkpoints such as `nisqa_mos_only.tar`, call `predict_mos(audio)`. For dimensional checkpoints such as `nisqa.tar`, call `predict_dim(audio)`. Both methods accept either a filesystem path or byte-encoded audio and return only the predicted score fields for that one input. In case of stereo files `ms_channel` can be used to select the audio channel.
+For packaged checkpoints you can also use `NISQAPredictor.from_nisqa()`, `NISQAPredictor.from_nisqa_mos_only()`, and `NISQAPredictor.from_nisqa_tts()`. MOS-only checkpoints such as `nisqa_mos_only.tar` should be used with `predict_mos(audio)`. Dimensional checkpoints such as `nisqa.tar` should be used with `predict_dim(audio)`. Both methods accept either a filesystem path or byte-encoded audio and return only the predicted score fields for that one input. In case of stereo files `ms_channel` can be used to select the audio channel.
 
 When installed with `pip`, relative model paths such as `weights/nisqa.tar` and bare filenames such as `nisqa.tar` fall back to the packaged model weights if they are not present in the current working directory.
 
