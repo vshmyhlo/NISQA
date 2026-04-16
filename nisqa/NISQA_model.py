@@ -17,6 +17,7 @@ import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader
 from . import NISQA_lib as NL
+from ._resources import resolve_path
         
 class nisqaModel(object):
     '''
@@ -931,10 +932,8 @@ class nisqaModel(object):
         '''   
         # if True overwrite input arguments from pretrained model
         if self.args['pretrained_model']:
-            if os.path.isabs(self.args['pretrained_model']):
-                model_path = os.path.join(self.args['pretrained_model'])
-            else:
-                model_path = os.path.join(os.getcwd(), self.args['pretrained_model'])
+            model_path = resolve_path(self.args['pretrained_model'], 'weights')
+            self.args['pretrained_model'] = model_path
             checkpoint = torch.load(model_path, map_location=self.dev)
             
             # update checkpoint arguments with new arguments

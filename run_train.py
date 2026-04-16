@@ -1,30 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 27 16:52:15 2020
-
-@author: Gabriel
-"""
-
-import yaml
-from nisqa.NISQA_model import nisqaModel
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--yaml', required=True, type=str, help='YAML file with config')
+import yaml
 
-args = parser.parse_args()
-args = vars(args)
+from nisqa.NISQA_model import nisqaModel
+from nisqa._resources import resolve_path
+
 
 if __name__ == "__main__":
-    
-    with open(args['yaml'], "r") as ymlfile:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--yaml",
+        required=True,
+        type=str,
+        help="YAML file with config; supports local files and packaged configs",
+    )
+    args = vars(parser.parse_args())
+    yaml_path = resolve_path(args["yaml"], "config")
+
+    with open(yaml_path, "r") as ymlfile:
         args_yaml = yaml.load(ymlfile, Loader=yaml.FullLoader)
+
     args = {**args_yaml, **args}
-    
+    args["yaml"] = yaml_path
+
     nisqa = nisqaModel(args)
     nisqa.train()
-
-
 
 
 

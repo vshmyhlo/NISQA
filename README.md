@@ -30,23 +30,49 @@ More information about the deep learning model structure, the used training data
 
 ## Installation
 
-To install requirements install [Anaconda](https://www.anaconda.com/products/individual) and then use:
+NISQA can be built and installed as a standard Python package with `uv` and `pip`.
 
-```setup
-conda env create -f env.yml
+To install into the existing `multimodal` conda environment use:
+
+```bash
+~/miniconda3/bin/conda run -n multimodal uv pip install .
 ```
 
-This will create a new environment with the name "nisqa". Activate this environment to go on:
+For an editable install during development use:
 
-```setup2
-conda activate nisqa
+```bash
+~/miniconda3/bin/conda run -n multimodal uv pip install -e .
 ```
+
+To build a source distribution and wheel use:
+
+```bash
+~/miniconda3/bin/conda run -n multimodal uv build
+```
+
+The original `env.yml` is still available if you prefer a conda-managed environment, but the project no longer needs to be used as a loose script checkout.
 
 
 
 ## Using NISQA
 
 We provide examples for using NISQA to predict the quality of speech samples, to train a new speech quality model, and to evaluate the performance of a trained speech quality model. 
+
+The installed package now exposes a prediction-only inference class:
+
+```python
+from nisqa import NISQAPredictor
+
+predictor = NISQAPredictor(
+    pretrained_model="weights/nisqa.tar",
+    batch_size=10,
+    num_workers=0,
+)
+
+results = predictor.predict_file("/path/to/wav/file.wav")
+```
+
+The repository scripts `python run_predict.py ...`, `python run_train.py ...`, and `python run_evaluate.py ...` still work when you are using a repo checkout.
 
 There are three different model weights available, the appropriate weights should be loaded depending on the domain:
 
@@ -58,29 +84,52 @@ There are three different model weights available, the appropriate weights shoul
 
 ### Prediction
 
-There are three modes available to predict the quality of speech via command line arguments:
+There are three prediction modes available through `NISQAPredictor`:
 * Predict a single file
 * Predict all files in a folder
 * Predict all files in a CSV table
 
 **Important:** Select "*nisqa.tar*" to predict the quality of a transmitted speech sample and "*nisqa_tts.tar*" to predict the Naturalness of a synthesized speech sample.
 
-To predict the quality of a single .wav file use:
+To predict the quality of a single `.wav` file use:
 
-```
-python run_predict.py --mode predict_file --pretrained_model weights/nisqa.tar --deg /path/to/wav/file.wav --output_dir /path/to/dir/with/results
-```
-To predict the quality of all .wav files in a folder use:
-```
-python run_predict.py --mode predict_dir --pretrained_model weights/nisqa.tar --data_dir /path/to/folder/with/wavs --num_workers 0 --bs 10 --output_dir /path/to/dir/with/results
-```
+```python
+from nisqa import NISQAPredictor
 
-To predict the quality of all .wav files listed in a csv table use:
-```
-python run_predict.py --mode predict_csv --pretrained_model weights/nisqa.tar --csv_file files.csv --csv_deg column_name_of_filepaths --num_workers 0 --bs 10 --output_dir /path/to/dir/with/results
+predictor = NISQAPredictor(
+    pretrained_model="weights/nisqa.tar",
+    output_dir="/path/to/dir/with/results",
+)
+results = predictor.predict_file("/path/to/wav/file.wav")
 ```
 
-The results will be printed to the console and saved to a csv file in a given folder (optional with --output_dir). To speed up the prediction, the number of workers and batch size of the Pytorch Dataloader can be increased (optional with --num_workers and --bs). In case of stereo files --ms_channel can be used to select the audio channel.
+To predict the quality of all `.wav` files in a folder use:
+
+```python
+predictor = NISQAPredictor(
+    pretrained_model="weights/nisqa.tar",
+    batch_size=10,
+    num_workers=0,
+    output_dir="/path/to/dir/with/results",
+)
+results = predictor.predict_dir("/path/to/folder/with/wavs")
+```
+
+To predict the quality of all `.wav` files listed in a CSV table use:
+
+```python
+predictor = NISQAPredictor(
+    pretrained_model="weights/nisqa.tar",
+    batch_size=10,
+    num_workers=0,
+    output_dir="/path/to/dir/with/results",
+)
+results = predictor.predict_csv("files.csv", "column_name_of_filepaths")
+```
+
+The prediction methods return the results as a pandas `DataFrame` and will also save `NISQA_results.csv` if `output_dir` is set. To speed up the prediction, the number of workers and batch size of the PyTorch dataloader can be increased with `num_workers` and `batch_size`. In case of stereo files `ms_channel` can be used to select the audio channel.
+
+When installed with `pip`, relative model paths such as `weights/nisqa.tar` and bare filenames such as `nisqa.tar` fall back to the packaged model weights if they are not present in the current working directory.
 
 ### Training
 
@@ -88,7 +137,7 @@ The results will be printed to the console and saved to a csv file in a given fo
 
 To use the model weights to finetune the model on a new dataset, only a CSV file with the filenames and labels is needed. The training configuration is controlled from a YAML file and can be started as follows:
 
-```
+```bash
 python run_train.py --yaml config/finetune_nisqa.yaml
 ```
 
@@ -124,7 +173,7 @@ NISQA can also be used as a framework to train new speech quality models with di
 
 The framewise and time-dependency models can be skipped, for example to train an LSTM model without CNN that uses the last-time step for prediction. Also a second time-dependency stage can be added, for example for LSTM-Self-Attention structure. The model structure can be easily controlled via the YAML configuration file. The training with the standard NISQA model configuration can be started with the [NISQA Corpus](https://github.com/gabrielmittag/NISQA/wiki/NISQA-Corpus) as follows:
 
-```
+```bash
 python run_train.py --yaml config/train_nisqa_cnn_sa_ap.yaml
 ```
 
@@ -138,11 +187,11 @@ To train a **double-ended** model for full-reference speech quality prediction, 
 
 Trained models can be evaluated on a given dataset as follows (can also be used as a conformance test of the model installation):
 
-```
-python run_evaluate.py
+```bash
+python run_evaluate.py --pretrained_model weights/nisqa.tar --data_dir /path/to/NISQA_Corpus --output_dir /path/to/results --csv_file NISQA_corpus_file.csv --csv_con NISQA_corpus_con.csv --do_plot
 ```
 
-Before running, the options and paths inside the Python script `run_evaluate.py` should be updated. If the [NISQA Corpus](https://github.com/gabrielmittag/NISQA/wiki/NISQA-Corpus) is used, only the `data_dir` and `output_dir` paths need to be adjusted. Besides Pearson's Correlation and RMSE, also an RMSE after first-order polynomial mapping is calculated. If a CSV file with per-condition labels is provided, the script will also output per-condition results and RMSE*. Optionally, correlation diagrams can be plotted. The script should return the same results as in the NISQA paper when it is run on the NISQA Corpus.
+The evaluation script predicts scores from the provided CSV and then computes evaluation metrics. If the [NISQA Corpus](https://github.com/gabrielmittag/NISQA/wiki/NISQA-Corpus) is used, only the `data_dir` and `output_dir` paths need to be adjusted. Besides Pearson's Correlation and RMSE, also an RMSE after first-order polynomial mapping is calculated. If a CSV file with per-condition labels is provided, the script will also output per-condition results and RMSE*. Optionally, correlation diagrams can be plotted. The script should return the same results as in the NISQA paper when it is run on the NISQA Corpus.
 
 ## NISQA Corpus
 
@@ -163,10 +212,7 @@ For the download link and more details on the datasets and used source speech sa
 
 The NISQA code is licensed under [MIT License](LICENSE).
 
-The model weights (nisqa.tar, nisqa_mos_only.tar, nisqa_tts.tar) are provided under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) License](weights/LICENSE_model_weights)
-
 The NISQA Corpus is provided under the original terms of the used source speech and noise samples. More information can be found in the  [NISQA Corpus Wiki](https://github.com/gabrielmittag/NISQA/wiki/NISQA-Corpus).
 
 Copyright © 2021 Gabriel Mittag  
 www.qu.tu-berlin.de
-

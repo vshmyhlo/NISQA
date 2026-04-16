@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nisqa"
+version = "0.1.0"
+description = "Deep learning models and inference utilities for speech quality and naturalness assessment."
+readme = "README.md"
+requires-python = ">=3.9,<3.11"
+license = "MIT"
+dependencies = [
+  "torch>=1.10",
+  "numpy>=1.21,<2",
+  "pandas>=1.3,<3",
+  "scipy>=1.7,<2",
+  "librosa>=0.8,<1",
+  "matplotlib>=3.5,<4",
+  "PyYAML>=6,<7",
+  "scikit-learn>=1.0,<2",
+  "tqdm>=4.62,<5",
+  "numba>=0.54,<1",
+  "soundfile>=0.10",
+]
+
+[tool.setuptools.packages.find]
+include = ["nisqa*"]
+
+[tool.setuptools.package-data]
+nisqa = [
+  "resources/config/*.yaml",
+  "resources/weights/*",
+]
